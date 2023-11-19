@@ -118,8 +118,6 @@ class DataBuffer:
         bytes_req = (bitcount + self.bit_position) // 8
         bytes_req += 1 if (bitcount + self.bit_position) % 8 else 0
         self.checkbuffer(bytes_req)
-        if bitcount > 32:
-            raise Exception("%d bits?!! Use readint64() and do your own bit manipulations!" %(bitcount))
         if not (0 <= self.bit_position < 8):
             raise Exception("bit_position %d" %self.bit_position)
         byte_offset = 0

@@ -323,6 +323,148 @@ class TimeToSampleBox(box.FullBox):
             yield ("sample count", entry[0])
             yield ("sample delta", entry[1])
 
+class RequiredBoxTypesBox(box.FullBox):
+    def parse(self, buf):
+        super(RequiredBoxTypesBox, self).parse(buf)
+        self.required_box_types = []
+        while self.remaining_bytes() >= 4:
+            self.required_box_types.append(buf.readint32())
+
+    def generate_fields(self):
+        for x in super(RequiredBoxTypesBox, self).generate_fields():
+            yield x
+        for required_box in self.required_box_types:
+            yield ("required box", required_box)
+
+class StereoViewInformationBox(box.FullBox):
+    def parse(self, buf):
+        super(StereoViewInformationBox, self).parse(buf)
+        buf.readbits(5)
+        self.has_additional_views = buf.readbits(1)
+        self.has_right_eye_view = buf.readbits(1)
+        self.has_left_eye_view = buf.readbits(1)
+
+    def generate_fields(self):
+        for x in super(StereoViewInformationBox, self).generate_fields():
+            yield x
+        yield ("has aditional views", self.has_additional_views)
+        yield ("has right eye view", self.has_right_eye_view)
+        yield ("has left eye view", self.has_left_eye_view)
+
+class HeroStereoEyeDescriptionBox(box.FullBox):
+    def parse(self, buf):
+        self.hero_eye_indicator = buf.readbits(8)
+
+    def generate_fields(self):
+        for x in super(HeroStereoEyeDescriptionBox, self).generate_fields():
+            yield x
+        if self.hero_eye_indicator == 0:
+            yield ("None")
+        elif self.hero_eye_indicator == 1:
+            yield ("Left")
+        elif self.hero_eye_indicator == 2:
+            yield ("Right")
+
+class HEVCConfigurationBox(box.Box):
+    def parse(self, buf):
+        super(HEVCConfigurationBox, self).parse(buf)
+        self.configurationVersion = buf.readbyte()
+        self.general_profile_space = buf.readbits(2)
+        self.general_tier_flag = buf.readbits(1)
+        self.general_profile_idc = buf.readbits(5)
+        self.general_profile_compatibility_flags = buf.readint32()
+        self.general_constraint_indicator_flags = buf.readbits(48)
+        self.general_level_idc = buf.readbyte()
+        buf.readbits(4)
+        self.min_spatial_segmentation_idc = buf.readbits(12)
+        buf.readbits(6)
+        self.parallelismType = buf.readbits(2)
+        buf.readbits(6)
+        self.chroma_format_idc = buf.readbits(2)
+        buf.readbits(5)
+        self.bit_depth_luma_minus8 = buf.readbits(3)
+        buf.readbits(5)
+        self.bit_depth_chroma_minus8 = buf.readbits(3)
+        self.avgFrameRate = buf.readint16()
+        self.constantFrameRate = buf.readbits(2)
+        self.numTemporalLayers = buf.readbits(3)
+        self.temporalIdNested = buf.readbits(1)
+        self.lengthSizeMinusOne = buf.readbits(2)
+        self.numOfArrays = buf.readbyte()
+        self.entries = []
+        for i in range(self.numOfArrays):
+           array_completeness = buf.readbits(1)
+           buf.readbits(1)
+           NAL_unit_type = buf.readbits(6)
+           numNalus = buf.readbits(16)
+           nalus = []
+           for j in range(numNalus):
+               nalUnitLength = buf.readbits(16)
+               nalUnit = buf.readbits(nalUnitLength * 8)
+               nalus.append((nalUnitLength, nalUnit))
+           self.entries.append((array_completeness, NAL_unit_type, numNalus, nalus))
+    def generate_fields(self):
+        for x in super(HEVCConfigurationBox, self).generate_fields():
+            yield x
+        yield("general profile space", self.general_profile_space)
+        yield("general tier flag", self.general_tier_flag)
+        yield("general profile idc", self.general_profile_idc)
+        yield("general profile compat flags", self.general_profile_compatibility_flags)
+        yield("general constraint indicator flags", self.general_constraint_indicator_flags)
+        yield("min spatial segmentation idc", self.min_spatial_segmentation_idc)
+        yield("parallelism type", self.parallelismType)
+        yield("chroma format idc", self.chroma_format_idc)
+        yield("bit depth luma minus8", self.bit_depth_chroma_minus8)
+        yield("avg Frame Rate", self.avgFrameRate)
+        yield("constant Frame Rate", self.constantFrameRate)
+        yield("num Temporal Layers", self.numTemporalLayers)
+        yield("temporal Id Nested", self.temporalIdNested)
+        yield("length Size Minus One", self.lengthSizeMinusOne)
+        yield ("num of entries", self.numOfArrays)
+
+        for i in range(self.numOfArrays):
+            yield ("entry NAL unit type", self.entries[i][1])
+            yield ("entry NAL num Nalus", self.entries[i][2])
+
+class LHEVCDecoderConfigurationRecord(box.Box):
+    def parse(self, buf):
+        super(LHEVCDecoderConfigurationRecord, self).parse(buf)
+        self.configurationVersion = buf.readbyte()
+        buf.readbits(4)
+        self.min_spatial_segmentation_idc = buf.readbits(12)
+        buf.readbits(6)
+        self.parallelismType = buf.readbits(2)
+        buf.readbits(2)
+        self.numTemporalLayers = buf.readbits(3)
+        self.temporalIdNested = buf.readbits(1)
+        self.lengthSizeMinusOne = buf.readbits(2)
+        self.numOfArrays = buf.readbyte()
+        self.entries = []
+        for i in range(self.numOfArrays):
+           array_completeness = buf.readbits(1)
+           buf.readbits(1)
+           NAL_unit_type = buf.readbits(6)
+           numNalus = buf.readbits(16)
+           nalus = []
+           for j in range(numNalus):
+               nalUnitLength = buf.readbits(16)
+               nalUnit = buf.readbits(nalUnitLength * 8)
+               nalus.append((nalUnitLength, nalUnit))
+           self.entries.append((array_completeness, NAL_unit_type, numNalus, nalus))
+    def generate_fields(self):
+        for x in super(LHEVCDecoderConfigurationRecord, self).generate_fields():
+            yield x
+        yield("min spatial segmentation", self.min_spatial_segmentation_idc)
+        yield("parallelismType", self.parallelismType)
+        yield("num temporal layers", self.numTemporalLayers)
+        yield("temporal id nested", self.temporalIdNested)
+        yield("length size minus one", self.lengthSizeMinusOne)
+        yield ("num of entries", self.numOfArrays)
+
+        for i in range(self.numOfArrays):
+            yield ("entry NAL unit type", self.entries[i][1])
+            yield ("entry NAL num Nalus", self.entries[i][2])
+
 
 class SampleToChunkBox(box.FullBox):
     def parse(self, buf):
@@ -502,7 +644,6 @@ class AvcCBox(box.Box):
             yield('bit depth chroma minus 8', self.bit_depth_chroma_minus_8)
             yield('sps ext byte count', self.sps_ext_len)
 
-
 boxmap = {
     'mvhd' : MovieHeader,
     'tkhd' : TrackHeader,
@@ -524,4 +665,9 @@ boxmap = {
     'mehd' : MovieExtendsHeader,
     'trex' : TrackExtendsBox,
     'avcC' : AvcCBox,
+    'must' : RequiredBoxTypesBox,
+    'stri' : StereoViewInformationBox,
+    'hero' : HeroStereoEyeDescriptionBox,
+    'hvcC' : HEVCConfigurationBox,
+    'lhvC' : LHEVCDecoderConfigurationRecord,
     }

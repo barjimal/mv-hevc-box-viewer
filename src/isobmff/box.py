@@ -14,6 +14,7 @@ def string_to_hex(s):
 class Box(object):
     box_names = {
         #iso bmff box types
+        'vexu' : 'Video Extended Usage box',
         'ftyp' : 'File type',
         'moov' : 'Movie container',
         'moof' : 'Movie fragment',
@@ -78,6 +79,7 @@ class Box(object):
     container_boxes = [
         'moov', 'trak', 'edts', 'mdia', 'minf', 'dinf', 'stbl', 'mvex',
         'moof', 'traf', 'mfra', 'skip', 'meta', 'ipro', 'sinf', 'schi',
+        'vexu', 'eyes', 'must', 'stri', 'hero', 
     ]
 
     # Avoid printing parsing errors for known data boxes
